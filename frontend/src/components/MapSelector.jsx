@@ -103,6 +103,10 @@ export default function MapSelector({
   initialZoom = 6,
   value = null,
   onChange = () => {},
+
+  onSave = () => {},
+  saved = false,
+
   height = "420px",
   wms = null,
 }) {
@@ -196,6 +200,19 @@ export default function MapSelector({
           </i>
           
         )}
+
+          <br/>
+         <button
+            className="primary"
+            onClick={onSave}
+          >Save Registration</button>
+
+          {saved && (
+            <div className="ok">
+              ✅ Saved to MongoDB Atlas!
+            </div>
+          )}
+
       </div>
       
 

@@ -36,25 +36,61 @@ export default function App() {  //default=main thing/file/fn
   
 
   const saveToCloud = async () => {
-    if (!farmer.name || !farmer.phone || !farmer.crop || !farmLocation||farmPolygon.length< 3) {
-      alert("Please fill name, phone, crop and pick the location and draw polygon with atleast 3 points on the map.");
+
+    if (
+      !farmer.name ||
+      !farmer.phone ||
+      !farmer.crop ||
+      !farmLocation ||
+      farmPolygon.length < 3
+    ) {
+      alert(
+        "Fill all fields and draw polygon."
+      );
       return;
     }
+
     try {
+
       const payload = {
+
         farmer,
         landRecord,
-        location: { lat: farmLocation.lat, lng: farmLocation.lng },
-        polygon: farmPolygon,
-        boundarySource: "farmer_drawn_polygon",
-        createdAt: serverTimestamp(),
+        location:{
+          lat:farmLocation.lat,
+          lng:farmLocation.lng
+        },
+        polygon:farmPolygon,
+        boundarySource:
+        "farmer_drawn_polygon"
       };
-      await addDoc(collection(db, "farms"), payload);
+
+      const response =
+        await fetch(
+          "http://localhost:5000/api/farms",
+          {
+            method:"POST",
+            headers:{
+              "Content-Type":
+              "application/json"
+            },
+            body:
+              JSON.stringify(payload)
+          }
+        );
+
+      if(!response.ok)
+        throw new Error(
+          "Failed to save"
+        );
+
       setSaved(true);
-      alert("✅ Saved to Firebase Cloud!");
-    } catch (e) {
-      console.error(e);
-      alert("Error saving to Firebase: " + e.message);
+
+      alert(
+        "Saved to MongoDB"
+      );
+    } catch(err){
+      alert(err.message);
     }
   };
 
@@ -96,6 +132,8 @@ export default function App() {  //default=main thing/file/fn
           center={mapCenter}
           polygon={farmPolygon}
           onPolygonChange={setFarmPolygon}
+          onSave={saveToCloud}
+          saved={saved}
           value={farmLocation}
           onChange={(location) => {
             setSaved(false);
@@ -106,9 +144,7 @@ export default function App() {  //default=main thing/file/fn
       </div>
 
 
-      {/*4.SAVE BUTTON */}
-      <button className="primary" onClick={saveToCloud}>Save Registration</button>
-      {saved && <div className="ok">✅ Saved to Firebase Cloud!</div>}
+      
 
     </div>
   );
