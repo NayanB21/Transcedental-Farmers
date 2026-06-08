@@ -6,27 +6,78 @@ const cors = require("cors");
 
 const farmRoutes =
  require("./routes/farmRoutes");
+const userRoutes =
+  require("./routes/userRoutes");
+const testRoutes =
+  require("./routes/testRoutes");
+const analyticsRoutes =
+require("./routes/analyticsRoutes");
+
+
+
+const {
+  initializeEE
+} = require(
+  "./services/earthEngineService"
+);
+
 
 const app = express();
 
+//the main/only 2 Middlewares 
 app.use(cors());
 app.use(express.json());
 
+
+app.use(
+ "/api/users",
+ userRoutes
+);
+
 app.use("/api/farms",farmRoutes);
 
-mongoose
-.connect(process.env.MONGO_URI)
-.then(()=>{
+app.use(
+ "/api/test",
+ testRoutes
+);
 
-  console.log("MongoDB Connected");
+app.use(
+ "/api/analytics",
+ analyticsRoutes
+);
+
+
+
+
+mongoose
+.connect(
+  process.env.MONGO_URI
+)
+.then(async () => {
+
+  console.log(
+    "MongoDB Connected"
+  );
+
+  await initializeEE();
 
   app.listen(
+
     process.env.PORT,
-    ()=>{
+
+    () => {
+
       console.log(
-       "Server Running"
+        "Server Running"
       );
+
     }
+
   );
+
+})
+.catch(err => {
+
+  console.error(err);
 
 });

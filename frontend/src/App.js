@@ -1,10 +1,16 @@
 // src/App.js
 import React, { useState } from "react";
 
-import MapSelector from "./components/MapSelector";
-import CadastralForm from "./components/CadastralForm"; 
-import FarmerForm from "./components/FarmerForm";
-import LocationSearch from "./components/LocationSearch";
+
+
+
+import Signup from "./pages/Signup";
+import Login from "./pages/Login";
+import Dashboard from "./pages/Dashboard";
+import FarmRegistration from "./pages/FarmRegistration";
+import MyFarms from "./pages/MyFarms";
+import FarmDetails from "./pages/FarmDetails";
+
 import "./App.css";
 
 /**
@@ -26,126 +32,107 @@ const bhuvanWms = {
 
 
 export default function App() {  //default=main thing/file/fn
-  const [farmer, setFarmer] = useState({ name: "", phone: "", village: "", crop: "", cropStage: "" });
-  const [landRecord, setLandRecord]=useState({state:"West Bengal",district:"",tehsil:"",village:""});
-  const [farmLocation, setFarmLocation] = useState(null);
-  const [farmPolygon, setFarmPolygon] =useState([]);
-  const [mapCenter, setMapCenter] = useState(null);
-  const [saved, setSaved] = useState(false);
+  const [page, setPage] =    //useState,useEffect for dashboard
+    useState("dashboard");
+
+  const [selectedFarm,setSelectedFarm] =
+    useState(null);
+
+  const [user, setUser] =    //useState,useEffect for login and signup
+    useState(                //useState,useEffect for FarmRegi is define inside it only
+                                  //and not needed here thus not included
+    JSON.parse(
+      localStorage.getItem("user")
+    ) || null
+    );
+
 
   
+  if (user) {
 
-  const saveToCloud = async () => {
-
-    if (
-      !farmer.name ||
-      !farmer.phone ||
-      !farmer.crop ||
-      !farmLocation ||
-      farmPolygon.length < 3
-    ) {
-      alert(
-        "Fill all fields and draw polygon."
-      );
-      return;
-    }
-
-    try {
-
-      const payload = {
-
-        farmer,
-        landRecord,
-        location:{
-          lat:farmLocation.lat,
-          lng:farmLocation.lng
-        },
-        polygon:farmPolygon,
-        boundarySource:
-        "farmer_drawn_polygon"
-      };
-
-      const response =
-        await fetch(
-          "http://localhost:5000/api/farms",
-          {
-            method:"POST",
-            headers:{
-              "Content-Type":
-              "application/json"
-            },
-            body:
-              JSON.stringify(payload)
+    if (page === "register") {
+      return (
+        <FarmRegistration
+          user={user}
+          onBack={() =>
+            setPage("dashboard")
           }
-        );
-
-      if(!response.ok)
-        throw new Error(
-          "Failed to save"
-        );
-
-      setSaved(true);
-
-      alert(
-        "Saved to MongoDB"
+        />
       );
-    } catch(err){
-      alert(err.message);
     }
-  };
-
-  
 
 
-  return (
-    <div className="container">
-      <h1>Transcedental Farmers • अतींद्रिय किसान</h1>
-      <p style={{ marginTop: -10, color: "#555" }}>An Initiative For The Farmer By The Farmer</p>
+    if(page==="farmdetails"){
+      return(
+        <FarmDetails
+          farm={selectedFarm}
+          onBack={() =>
+            setPage(
+              "myfarms"
+            )
+          }
+        />
+      );
+    }
 
-      {/*1.FARMER FORM*/}
-      <FarmerForm
-        value={farmer}
-        onChange={setFarmer}
-        onEdit={() => setSaved(false)}
-      />
+    if (page === "myfarms") {
+      return (
+        <MyFarms
+          user={user}
+          onBack={() =>
+            setPage(
+              "dashboard"
+            )
+          }
+          onFarmSelect={(farm)=>{
+            setSelectedFarm(
+              farm
+            );
+            setPage(
+              "farmdetails"
+            );
+          }}
+        />
+      );
 
-      {/*2.CADASTRAL/LAND LOCATION*/}
-      <CadastralForm
-        value={landRecord}
-        onChange={setLandRecord}
-        onEdit={() => setSaved(false)}
-      />
+    }
 
-      {/*3.Location search */}
-      <LocationSearch
-        onLocationFound={(location) => {
-          setMapCenter(location);
-          setFarmLocation(location);
+    return (
+      <Dashboard
+        user={user}
+
+        onRegisterFarm={() =>
+          setPage("register")
+        }
+
+        onMyFarms={() =>
+          setPage("myfarms")
+        }
+
+        onLogout={() => {
+
+          localStorage.removeItem(
+            "user"
+          );
+
+          setUser(null);
+
         }}
       />
+    );
 
+  }
 
-      {/*4.MAP SELECTOR */}
-      <div className="card">
-        <h2>Map (Click on the map to select your farm location.)</h2>
-        <MapSelector
-          center={mapCenter}
-          polygon={farmPolygon}
-          onPolygonChange={setFarmPolygon}
-          onSave={saveToCloud}
-          saved={saved}
-          value={farmLocation}
-          onChange={(location) => {
-            setSaved(false);
-            setFarmLocation(location);
-          }}
-          wms={bhuvanWms}
-        />
-      </div>
+return (
 
+  <div>
+    <Signup />
+    <hr />
+    <Login
+      onLogin={setUser}
+    />
+  </div>
+);
 
-      
-
-    </div>
-  );
+  
 }

@@ -2,6 +2,11 @@ const mongoose = require("mongoose");
 
 const FarmSchema = new mongoose.Schema({
 
+  userId: {
+    type: String,
+    required: true
+  },
+
   farmer: Object,
 
   landRecord: Object,
