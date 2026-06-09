@@ -1,6 +1,14 @@
-import React from "react";
+import React,
+{
+  useEffect,
+  useState
+}
+from "react";
+
 import * as turf from "@turf/turf";
-import polygonToGeoJson from "../utils/polygonToGeoJson";
+
+import polygonToGeoJson
+from "../utils/polygonToGeoJson";
 
 export default function FarmDetails({
 
@@ -8,6 +16,11 @@ export default function FarmDetails({
   onBack
 
 }) {
+
+  const [
+    report,
+    setReport
+  ] = useState(null);
 
   let areaSqm = 0;
 
@@ -55,6 +68,54 @@ export default function FarmDetails({
     areaHectares =
       areaSqm / 10000;
   }
+  useEffect(() => {
+
+    const geoJson =
+      polygonToGeoJson(
+        farm.polygon
+      );
+
+    fetch(
+      "http://localhost:5000/api/analytics/farm",
+      {
+
+        method:"POST",
+
+        headers:{
+          "Content-Type":
+          "application/json"
+        },
+
+        body:
+          JSON.stringify({
+
+          geoJson,
+
+          crop:
+          farm.farmer.crop
+
+          })
+
+      }
+    )
+
+    .then(
+      res => res.json()
+    )
+
+    .then(
+      data => {   //this data is res.json() only
+
+        setReport(data);
+
+      }
+    )
+
+    .catch(
+      console.error
+    );
+
+  }, [farm]);
 
   return (
 
@@ -121,6 +182,216 @@ export default function FarmDetails({
         </p>
 
       </div>
+
+      {
+        report && (
+
+          <div className="card">
+
+            <h2>
+              Satellite Analytics
+            </h2>
+
+            <p>
+              NDVI:
+              {" "}
+              {
+                report.analytics.ndvi?.toFixed(2)
+              }
+            </p>
+
+            <p>
+              NDRE:
+              {" "}
+              {
+                report.analytics.ndre?.toFixed(2)
+              }
+            </p>
+
+            <p>
+              NDWI:
+              {" "}
+              {
+                report.analytics.ndwi?.toFixed(2)
+              }
+            </p>
+
+            <p>
+              MSI:
+              {" "}
+              {
+                report.analytics.msi?.toFixed(2)
+              }
+            </p>
+
+          </div>
+
+        )
+      }
+
+      {
+        report && (
+
+          <div className="card">
+
+            <h3>
+              Health Score:
+              {" "}
+              {
+              report
+              .recommendations
+              .score
+              }
+              /100
+            </h3>
+
+            <h2>
+              Crop Health Report
+            </h2>
+
+            <p>
+
+              Health:
+              {" "}
+              <b>
+
+              {
+                report
+                .recommendations
+                .health
+              }
+
+              </b>
+
+            </p>
+
+            <p>
+
+              Risk:
+              {" "}
+              <b>
+
+              {
+                report
+                .recommendations
+                .risk
+              }
+
+              </b>
+
+            </p>
+
+            <h3>
+              Recommendations
+            </h3>
+
+            <ul>
+
+            {
+              report
+              .recommendations
+              .recommendations
+              .map(
+
+                (
+                  item,
+                  index
+                ) => (
+
+                  <li
+                    key={index}
+                  >
+                    {item}
+                  </li>
+
+                )
+
+              )
+            }
+
+            </ul>
+
+          </div>
+
+        )
+      }
+
+
+      {
+        report && (
+
+          <div className="card">
+
+          <h2>
+            Stress Detection
+          </h2>
+
+          <ul>
+
+          {
+            report.stresses.map(
+
+            (
+              stress,
+              index
+            ) => (
+
+              <li
+              key={index}
+              >
+              {stress}
+              </li>
+
+            )
+
+            )
+          }
+
+          </ul>
+
+          </div>
+
+        )
+      }
+
+      {
+        report && (
+
+          <div className="card">
+
+          <h2>
+            Crop Specific Advice
+          </h2>
+
+          <ul>
+
+          {
+            report.cropAdvice.map(
+
+            (
+              item,
+              index
+            ) => (
+
+              <li
+              key={index}
+              >
+              {item}
+              </li>
+
+            )
+
+            )
+          }
+
+          </ul>
+
+          </div>
+
+        )
+        }
+
+
 
     </div>
 

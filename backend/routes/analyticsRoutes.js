@@ -2,47 +2,98 @@ const express =
 require("express");
 
 const {
-  getNDVI
-} = require(
-  "../services/ndviService"
+ getAnalytics
+}
+=
+require(
+ "../services/analyticsService"
 );
+
+const {
+ detectStress
+}
+=
+require(
+ "../services/stressService"
+);
+
+
+const {
+ generateRecommendations
+}
+=
+require(
+ "../services/recommendationService"
+);
+
+const {
+ getCropAdvice
+}
+=
+require(
+ "../services/cropAdviceService"
+);
+
+
 
 const router =
-  express.Router();
+express.Router();
 
 router.post(
-  "/ndvi",
-  async(req,res)=>{
+ "/farm",
+ async(req,res)=>{
 
-    try{
+  try{
 
-      const ndvi =
-        await getNDVI(
-          req.body.geoJson
-        );
+    const data =
+    await getAnalytics(
+      req.body.geoJson
+    );
 
-      res.json({
+    const recommendations =
+      generateRecommendations(
+      data
+      );
+    
+    const stresses =
+      detectStress(
+      data
+      );
 
-        success:true,
+    const cropAdvice =
+      getCropAdvice(
+      req.body.crop,
+      stresses
+      );
 
-        ndvi
+  
 
-      });
+  
 
-    }
-    catch(err){
+   return res.json({
 
-      res.status(500).json({
+    analytics:data,
 
-        message:
-          err.message
+    stresses,
 
-      });
+    recommendations,
 
-    }
+    cropAdvice
+
+    });
+
 
   }
-);
+  catch(err){
+
+   res.status(500)
+   .json({
+     message:err.message
+   });
+
+  }
+
+ });
 
 module.exports =
 router;

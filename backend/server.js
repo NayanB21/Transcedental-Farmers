@@ -8,10 +8,8 @@ const farmRoutes =
  require("./routes/farmRoutes");
 const userRoutes =
   require("./routes/userRoutes");
-const testRoutes =
-  require("./routes/testRoutes");
 const analyticsRoutes =
-require("./routes/analyticsRoutes");
+  require("./routes/analyticsRoutes");
 
 
 
@@ -36,10 +34,7 @@ app.use(
 
 app.use("/api/farms",farmRoutes);
 
-app.use(
- "/api/test",
- testRoutes
-);
+
 
 app.use(
  "/api/analytics",
