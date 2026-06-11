@@ -1,26 +1,33 @@
-import React,
-{
-  useEffect,
-  useState
-}
-from "react";
+import React, { useEffect, useState } from "react";
 
 import * as turf from "@turf/turf";
 
-import polygonToGeoJson
-from "../utils/polygonToGeoJson";
+import ReactMarkdown from "react-markdown";
 
-export default function FarmDetails({
+import polygonToGeoJson from "../utils/polygonToGeoJson";
 
-  farm,
-  onBack
+import { MapContainer, TileLayer, Polygon } from "react-leaflet";
 
-}) {
+import "leaflet/dist/leaflet.css";
 
-  const [
-    report,
-    setReport
-  ] = useState(null);
+export default function FarmDetails({ farm, onBack, onYieldAnalytics }) {
+  const [question, setQuestion] = useState("");
+
+  const [answer, setAnswer] = useState("");
+
+  const [loading, setLoading] = useState(false);
+
+  const [messages, setMessages] = useState([]);
+
+  const [report, setReport] = useState(null);
+
+  const [showHistory, setShowHistory] = useState(false);
+
+  const [listening, setListening] = useState(false);
+
+  const [speechLanguage, setSpeechLanguage] = useState("hi-IN");
+
+  const polygonPositions = farm.polygon.map((point) => [point.lat, point.lng]);
 
   let areaSqm = 0;
 
@@ -28,373 +35,354 @@ export default function FarmDetails({
 
   let areaHectares = 0;
 
-  if (
-    farm.polygon &&
-    farm.polygon.length >= 3
-  ) {
+  if (farm.polygon && farm.polygon.length >= 3) {
+    const coordinates = farm.polygon.map((p) => [p.lng, p.lat]);
+    coordinates.push(coordinates[0]);
 
-    const coordinates =
-      farm.polygon.map(p => [
-        p.lng,
-        p.lat
-      ]);
+    const polygon = turf.polygon([coordinates]);
 
-    coordinates.push(
-      coordinates[0]
-    );
+    const geoJson = polygonToGeoJson(farm.polygon);
 
-    const polygon =
-      turf.polygon([
-        coordinates
-      ]);
+    console.log(geoJson);
 
-    const geoJson =
-        polygonToGeoJson(
-            farm.polygon
-        );
+    areaSqm = turf.area(polygon);
 
-        console.log(
-        geoJson
-        );
+    areaAcres = areaSqm / 4046.86;
 
-    areaSqm =
-      turf.area(
-        polygon
-      );
-
-    areaAcres =
-      areaSqm / 4046.86;
-
-    areaHectares =
-      areaSqm / 10000;
+    areaHectares = areaSqm / 10000;
   }
+
   useEffect(() => {
+    const geoJson = polygonToGeoJson(farm.polygon);
 
-    const geoJson =
-      polygonToGeoJson(
-        farm.polygon
-      );
+    fetch("http://localhost:5000/api/analytics/farm", {
+      method: "POST",
 
-    fetch(
-      "http://localhost:5000/api/analytics/farm",
-      {
+      headers: {
+        "Content-Type": "application/json",
+      },
 
-        method:"POST",
+      body: JSON.stringify({
+        farmId: farm._id,
+        geoJson,
 
-        headers:{
-          "Content-Type":
-          "application/json"
-        },
+        crop: farm.farmer.crop,
+      }),
+    })
+      .then((res) => res.json())
 
-        body:
-          JSON.stringify({
-
-          geoJson,
-
-          crop:
-          farm.farmer.crop
-
-          })
-
-      }
-    )
-
-    .then(
-      res => res.json()
-    )
-
-    .then(
-      data => {   //this data is res.json() only
+      .then((data) => {
+        //this data is res.json() only
 
         setReport(data);
+      })
 
-      }
-    )
+      .catch(console.error);
 
-    .catch(
-      console.error
-    );
-
+    fetch(`http://localhost:5000/api/chats/${farm._id}`)
+      .then((res) => res.json())
+      .then((data) => {
+        setMessages(data);
+      });
   }, [farm]);
 
+  const startListening = () => {
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      alert("Speech Recognition not supported in this browser.");
+
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+
+    recognition.continuous = false;
+
+    recognition.interimResults = false;
+
+    recognition.lang = speechLanguage;
+
+    setListening(true);
+
+    recognition.start();
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+
+      setQuestion(transcript);
+    };
+
+    recognition.onerror = (event) => {
+      console.error(event);
+
+      setListening(false);
+    };
+
+    recognition.onend = () => {
+      setListening(false);
+    };
+  };
+
+  const askAssistant = async () => {
+    if (!question.trim()) return;
+
+    try {
+      setLoading(true);
+
+      const response = await fetch(
+        "http://localhost:5000/api/chat",
+
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type": "application/json",
+          },
+
+          body: JSON.stringify({
+            farmId: farm._id,
+
+            crop: farm.farmer.crop,
+
+            analytics: report.analytics,
+
+            stresses: report.stresses,
+
+            question,
+          }),
+        },
+      );
+
+      const data = await response.json();
+
+      setAnswer(data.answer);
+
+      setQuestion("");
+
+      const chats = await fetch(`http://localhost:5000/api/chats/${farm._id}`);
+
+      const history = await chats.json();
+
+      setMessages(history);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-
     <div className="container">
+      <button onClick={onBack}>← Back</button>
 
-      <button
-        onClick={onBack}
-      >
-        ← Back
-      </button>
-
-      <h1>
-        Farm Details
-      </h1>
+      <h1>Farm Details</h1>
 
       <div className="card">
+        <h3>Crop: {farm.farmer.crop}</h3>
 
-        <h3>
-          Crop:
-          {" "}
-          {farm.farmer.crop}
-        </h3>
+        <p>Farmer: {farm.farmer.name}</p>
 
-        <p>
-          Farmer:
-          {" "}
-          {farm.farmer.name}
-        </p>
+        <p>Village: {farm.landRecord.village}</p>
 
-        <p>
-          Village:
-          {" "}
-          {farm.landRecord.village}
-        </p>
-
-        <p>
-          District:
-          {" "}
-          {farm.landRecord.district}
-        </p>
+        <p>District: {farm.landRecord.district}</p>
 
         <hr />
 
-        <h3>
-          Area Information
-        </h3>
+        <h3>Area Information</h3>
 
-        <p>
-          Square Meters:
-          {" "}
-          {areaSqm.toFixed(2)}
-        </p>
+        <p>Square Meters: {areaSqm.toFixed(2)}</p>
 
-        <p>
-          Acres:
-          {" "}
-          {areaAcres.toFixed(2)}
-        </p>
+        <p>Acres: {areaAcres.toFixed(2)}</p>
 
-        <p>
-          Hectares:
-          {" "}
-          {areaHectares.toFixed(2)}
-        </p>
-
+        <p>Hectares: {areaHectares.toFixed(2)}</p>
       </div>
 
-      {
-        report && (
+      <div className="card">
+        <h2>Farm Boundary</h2>
 
-          <div className="card">
+        <MapContainer
+          center={polygonPositions[0]}
+          zoom={17}
+          style={{
+            height: "350px",
+            width: "100%",
+          }}
+        >
+          <TileLayer
+            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+            attribution="Esri"
+          />
 
-            <h2>
-              Satellite Analytics
-            </h2>
+          <TileLayer
+            url="https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
+            attribution="Esri Labels"
+          />
 
-            <p>
-              NDVI:
-              {" "}
-              {
-                report.analytics.ndvi?.toFixed(2)
-              }
-            </p>
+          <Polygon positions={polygonPositions} />
+        </MapContainer>
+      </div>
 
-            <p>
-              NDRE:
-              {" "}
-              {
-                report.analytics.ndre?.toFixed(2)
-              }
-            </p>
+      {report && (
+        <div className="card">
+          <h2>Satellite Analytics</h2>
 
-            <p>
-              NDWI:
-              {" "}
-              {
-                report.analytics.ndwi?.toFixed(2)
-              }
-            </p>
+          <p>NDVI: {report.analytics.ndvi?.toFixed(2)}</p>
 
-            <p>
-              MSI:
-              {" "}
-              {
-                report.analytics.msi?.toFixed(2)
-              }
-            </p>
+          <p>NDRE: {report.analytics.ndre?.toFixed(2)}</p>
 
-          </div>
+          <p>NDWI: {report.analytics.ndwi?.toFixed(2)}</p>
 
-        )
-      }
+          <p>MSI: {report.analytics.msi?.toFixed(2)}</p>
+        </div>
+      )}
 
-      {
-        report && (
+      {report && (
+        <div className="card">
+          <h3>
+            Health Score: {report.recommendations.score}
+            /100
+          </h3>
 
-          <div className="card">
+          <h2>Crop Health Report</h2>
 
-            <h3>
-              Health Score:
-              {" "}
-              {
-              report
-              .recommendations
-              .score
-              }
-              /100
-            </h3>
+          <p>
+            Health: <b>{report.recommendations.health}</b>
+          </p>
 
-            <h2>
-              Crop Health Report
-            </h2>
+          <p>
+            Risk: <b>{report.recommendations.risk}</b>
+          </p>
 
-            <p>
+          <h3>Recommendations</h3>
 
-              Health:
-              {" "}
-              <b>
+          <ul>
+            {report.recommendations.recommendations.map((item, index) => (
+              <li key={index}>{item}</li>
+            ))}
+          </ul>
+        </div>
+      )}
 
-              {
-                report
-                .recommendations
-                .health
-              }
+      {report && (
+        <div className="card">
+          <h2>Stress Detection</h2>
 
-              </b>
+          <ul>
+            {report.stresses.map((stress, index) => (
+              <li key={index}>{stress}</li>
+            ))}
+          </ul>
+        </div>
+      )}
 
-            </p>
+      {report && (
+        <div className="card">
+          <h2>Crop Specific Advice</h2>
 
-            <p>
+          <ul>
+            {report.cropAdvice.map((item, index) => (
+              <li key={index}>{item}</li>
+            ))}
+          </ul>
+        </div>
+      )}
 
-              Risk:
-              {" "}
-              <b>
+      {report && (
+        <div className="card">
+          <h2>🤖 Farm Assistant</h2>
 
-              {
-                report
-                .recommendations
-                .risk
-              }
+          <button onClick={() => setShowHistory(!showHistory)}>
+            {showHistory ? "Hide Chat History" : "Show Chat History"}
+          </button>
 
-              </b>
-
-            </p>
-
-            <h3>
-              Recommendations
-            </h3>
-
-            <ul>
-
-            {
-              report
-              .recommendations
-              .recommendations
-              .map(
-
-                (
-                  item,
-                  index
-                ) => (
-
-                  <li
-                    key={index}
+          {showHistory && (
+            <div
+              style={{
+                maxHeight: "300px",
+                overflowY: "auto",
+                border: "1px solid #ccc",
+                padding: "10px",
+                marginTop: "10px",
+                marginBottom: "10px",
+              }}
+            >
+              {messages.map((msg) => (
+                <div
+                  key={msg._id}
+                  style={{
+                    textAlign: msg.role === "user" ? "right" : "left",
+                    marginBottom: "12px",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "inline-block",
+                      padding: "10px",
+                      borderRadius: "12px",
+                      maxWidth: "70%",
+                      background: msg.role === "user" ? "#d1e7ff" : "#f1f1f1",
+                    }}
                   >
-                    {item}
-                  </li>
+                    <ReactMarkdown>{msg.message}</ReactMarkdown>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
 
-                )
+          <select
+            value={speechLanguage}
+            onChange={(e) => setSpeechLanguage(e.target.value)}
+          >
+            <option value="hi-IN">Hindi</option>
+            <option value="en-US">English</option>
+            <option value="bn-IN">Bengali</option>
+          </select>
 
-              )
-            }
+          <textarea
+            value={question}
+            onChange={(e) => setQuestion(e.target.value)}
+            rows={4}
+            style={{
+              width: "100%",
+            }}
+            placeholder="Ask about your crop..."
+          />
 
-            </ul>
+          <br />
 
-          </div>
+          <button onClick={startListening}>
+            {listening ? "🎙️ Listening..." : "🎤 Speak"}
+          </button>
 
-        )
-      }
-
-
-      {
-        report && (
-
-          <div className="card">
-
-          <h2>
-            Stress Detection
-          </h2>
-
-          <ul>
-
-          {
-            report.stresses.map(
-
-            (
-              stress,
-              index
-            ) => (
-
-              <li
-              key={index}
-              >
-              {stress}
-              </li>
-
-            )
-
-            )
-          }
-
-          </ul>
-
-          </div>
-
-        )
-      }
+          <br />
+          <br />
+          <button onClick={askAssistant}>Ask Assistant</button>
+          {loading && <p>🤖 Analyzing your farm...</p>}
+          {answer && (
+            <div
+              style={{
+                display: "inline-block",
+                padding: "10px",
+                borderRadius: "12px",
+              }}
+            >
+              <ReactMarkdown>{answer}</ReactMarkdown>
+            </div>
+          )}
+        </div>
+      )}
 
       {
-        report && (
-
-          <div className="card">
-
-          <h2>
-            Crop Specific Advice
-          </h2>
-
-          <ul>
-
-          {
-            report.cropAdvice.map(
-
-            (
-              item,
-              index
-            ) => (
-
-              <li
-              key={index}
-              >
-              {item}
-              </li>
-
-            )
-
-            )
-          }
-
-          </ul>
-
-          </div>
-
-        )
-        }
-
-
-
+        <div className="card">
+          <h2>Your Yield Prediction</h2>
+          <button className="primary" onClick={() => onYieldAnalytics(farm)}>
+            View Yield Analytics
+          </button>
+        </div>
+      }
     </div>
-
   );
-
 }

@@ -10,6 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import FarmRegistration from "./pages/FarmRegistration";
 import MyFarms from "./pages/MyFarms";
 import FarmDetails from "./pages/FarmDetails";
+import YieldAnalytics from "./pages/YieldAnalytics";
 
 import "./App.css";
 
@@ -20,15 +21,7 @@ import "./App.css";
  * ------------this commenting was of previous logic of integrating all open street,mp bhulekh and bhuvan
  */
 
-const bhuvanWms = {
-  url:
-    "https://bhuvan-vec1.nrsc.gov.in/bhuvan/gwc/service/wms?",
-  layers: "basemap:WB_Vill",
-  format: "image/png",
-  transparent: true,
-  version: "1.1.1",
-  opacity: 0.8
-};
+
 
 
 export default function App() {  //default=main thing/file/fn
@@ -69,6 +62,29 @@ export default function App() {  //default=main thing/file/fn
           onBack={() =>
             setPage(
               "myfarms"
+            )
+          }
+            onYieldAnalytics={
+              (farm)=>{
+                setSelectedFarm(
+                  farm
+                );
+                setPage(
+                  "yieldanalytics"
+                );
+              }
+            }
+        />
+      );
+    }
+
+    if(page==="yieldanalytics"){
+      return(
+        <YieldAnalytics
+          farm={selectedFarm}
+          onBack={() =>
+            setPage(
+              "farmdetails"
             )
           }
         />

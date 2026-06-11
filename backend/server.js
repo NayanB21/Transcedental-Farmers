@@ -10,8 +10,18 @@ const userRoutes =
   require("./routes/userRoutes");
 const analyticsRoutes =
   require("./routes/analyticsRoutes");
-
-
+const chatRoutes =
+  require("./routes/chatRoutes");
+const chatHistoryRoutes =
+  require("./routes/chatHistoryRoutes");
+const timelineRoutes =
+  require("./routes/timelineRoutes");
+const yieldRoutes =
+  require("./routes/yieldRoutes");
+const yieldAnalysisRoutes =
+  require("./routes/yieldAnalysisRoutes");
+const reportRoutes =
+  require("./routes/reportRoutes");
 
 const {
   initializeEE
@@ -34,13 +44,40 @@ app.use(
 
 app.use("/api/farms",farmRoutes);
 
-
+app.use(
+ "/api/chat",
+ chatRoutes
+);
 
 app.use(
  "/api/analytics",
  analyticsRoutes
 );
 
+app.use(
+ "/api/chats",
+ chatHistoryRoutes
+);
+
+app.use(
+ "/api/timeline",
+ timelineRoutes
+);
+
+app.use(
+ "/api/yield",
+ yieldRoutes
+);
+
+app.use(
+ "/api/yield-analysis",
+ yieldAnalysisRoutes
+);
+
+app.use(
+ "/api/report",
+ reportRoutes
+);
 
 
 
