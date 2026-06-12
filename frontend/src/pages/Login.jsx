@@ -39,11 +39,20 @@ export default function Login({ onLogin }) {
         );
 
       localStorage.setItem(
-        "user",
-        JSON.stringify(data)
+      "token",
+      data.token
       );
 
-      onLogin(data);
+      localStorage.setItem(
+      "user",
+      JSON.stringify(
+        data.user
+      )
+      );
+
+      onLogin(
+        data.user
+      );
 
     }
     catch (err) {

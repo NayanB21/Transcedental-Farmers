@@ -5,9 +5,13 @@ const ChatSchema =
 new mongoose.Schema({
 
   farmId:{
-    type:String,
+    type:
+    mongoose.Schema.Types.ObjectId,
+
+    ref:"Farm",
+
     required:true
-  },
+    },
 
   role:{
     type:String,

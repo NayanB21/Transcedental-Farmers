@@ -16,12 +16,11 @@ const chatHistoryRoutes =
   require("./routes/chatHistoryRoutes");
 const timelineRoutes =
   require("./routes/timelineRoutes");
-const yieldRoutes =
-  require("./routes/yieldRoutes");
-const yieldAnalysisRoutes =
-  require("./routes/yieldAnalysisRoutes");
+
 const reportRoutes =
   require("./routes/reportRoutes");
+const yieldCacheRoutes =
+  require("./routes/yieldCacheRoutes");
 
 const {
   initializeEE
@@ -64,19 +63,16 @@ app.use(
  timelineRoutes
 );
 
-app.use(
- "/api/yield",
- yieldRoutes
-);
 
-app.use(
- "/api/yield-analysis",
- yieldAnalysisRoutes
-);
 
 app.use(
  "/api/report",
  reportRoutes
+);
+
+app.use(
+ "/api/yield-cache",
+ yieldCacheRoutes
 );
 
 

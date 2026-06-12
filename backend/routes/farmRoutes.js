@@ -3,12 +3,21 @@ const Farm = require("../models/Farm");
 
 const router = express.Router();
 
-router.post("/", async (req,res)=>{
+const auth =
+require(
+ "../middleware/authMiddleware"
+);
+
+router.post("/",auth, async (req,res)=>{
 
   try{
 
     const farm =
-      await Farm.create(req.body);
+      await Farm.create({
+      ...req.body,
+      userId:
+      req.user.id
+      });
 
     res.status(201).json(farm);
 

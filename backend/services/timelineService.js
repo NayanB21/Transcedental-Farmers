@@ -98,22 +98,20 @@ async function getNdviTimeline(
 
               );
 
+              const analytics = {ndvi,ndre,ndwi,ndmi,msi,savi,gci,evi};
+
+              const healthScore =
+                calculateHealthScore(
+                analytics
+                );
+
               timeline.push({
-
-                date:
-                new Date(
-                  feature.properties[
-                  "system:time_start"
-                  ]
-                )
-                .toLocaleDateString(),
-
-                ndvi:
-                Number(
-                  value
-                ) || 0
-
+              date:
+              formattedDate,
+              healthScore
               });
+
+              
 
             }
 

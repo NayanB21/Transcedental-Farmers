@@ -73,6 +73,8 @@ export default function FarmDetails({ farm, onBack, onYieldAnalytics }) {
 
       .then((data) => {
         //this data is res.json() only
+        //debug step
+        console.log("ANALYTICS RESPONSE:", data);
 
         setReport(data);
       })
@@ -173,6 +175,12 @@ export default function FarmDetails({ farm, onBack, onYieldAnalytics }) {
     }
   };
 
+console.log("REPORT =", report);
+console.log("MESSAGES =", messages);
+console.log("FARM =", farm);
+
+
+
   return (
     <div className="container">
       <button onClick={onBack}>← Back</button>
@@ -228,37 +236,37 @@ export default function FarmDetails({ farm, onBack, onYieldAnalytics }) {
         <div className="card">
           <h2>Satellite Analytics</h2>
 
-          <p>NDVI: {report.analytics.ndvi?.toFixed(2)}</p>
+          <p>NDVI: {report?.analytics?.ndvi?.toFixed(2)}</p>
 
-          <p>NDRE: {report.analytics.ndre?.toFixed(2)}</p>
+          <p>NDRE: {report?.analytics?.ndre?.toFixed(2)}</p>
 
-          <p>NDWI: {report.analytics.ndwi?.toFixed(2)}</p>
+          <p>NDWI: {report?.analytics?.ndwi?.toFixed(2)}</p>
 
-          <p>MSI: {report.analytics.msi?.toFixed(2)}</p>
+          <p>MSI: {report?.analytics?.msi?.toFixed(2)}</p>
         </div>
       )}
 
       {report && (
         <div className="card">
           <h3>
-            Health Score: {report.recommendations.score}
+            Health Score: {report?.recommendations?.score ?? "--"}
             /100
           </h3>
 
           <h2>Crop Health Report</h2>
 
           <p>
-            Health: <b>{report.recommendations.health}</b>
+            Health: <b>{report?.recommendations?.health}</b>
           </p>
 
           <p>
-            Risk: <b>{report.recommendations.risk}</b>
+            Risk: <b>{report?.recommendations?.risk}</b>
           </p>
 
           <h3>Recommendations</h3>
 
           <ul>
-            {report.recommendations.recommendations.map((item, index) => (
+            {report?.recommendations?.recommendations?.map((item, index) => (
               <li key={index}>{item}</li>
             ))}
           </ul>
@@ -308,7 +316,7 @@ export default function FarmDetails({ farm, onBack, onYieldAnalytics }) {
                 marginBottom: "10px",
               }}
             >
-              {messages.map((msg) => (
+              {messages?.map((msg) => (
                 <div
                   key={msg._id}
                   style={{
@@ -378,7 +386,7 @@ export default function FarmDetails({ farm, onBack, onYieldAnalytics }) {
       {
         <div className="card">
           <h2>Your Yield Prediction</h2>
-          <button className="primary" onClick={() => onYieldAnalytics(farm)}>
+          <button className="primary" onClick={() => onYieldAnalytics(farm,report)}>
             View Yield Analytics
           </button>
         </div>

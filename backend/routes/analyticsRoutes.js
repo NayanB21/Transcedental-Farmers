@@ -35,6 +35,27 @@ require(
 );
 
 
+const FarmAnalytics =
+require(
+ "../models/FarmAnalytics"
+);
+
+const {
+ predictYield
+}
+=
+require(
+ "../services/yieldPredictionService"
+);
+
+
+const {
+ askAgronomist
+}
+=
+require(
+ "../services/geminiService"
+);
 
 const router =
 express.Router();
@@ -45,19 +66,62 @@ router.post(
 
   try{
 
-    const data =
+    const existing =
+      await FarmAnalytics.findOne({
+        farmId:
+        req.body.farmId
+      });
+
+
+    if(existing){
+      const ageHours =
+      (
+        Date.now()
+        -
+        new Date(existing.updatedAt))/(1000 * 60 * 60);
+      if(ageHours < 72){
+        console.log(
+          "Returning Cached Analytics"
+        );
+        return res.json({
+
+          analytics:
+          existing.analytics,
+
+          stresses:
+          existing.stresses,
+
+          recommendations:
+          existing.recommendations,
+
+          cropAdvice:
+          existing.cropAdvice,
+
+          yieldData:
+          existing.yieldData,
+
+          aiAnalysis:
+          existing.aiAnalysis
+
+        });
+
+
+      }
+    }
+
+          const data =
     await getAnalytics(
       req.body.geoJson
     );
 
     const recommendations =
       generateRecommendations(
-      data
+      data.analytics
       );
     
     const stresses =
       detectStress(
-      data
+      data.analytics
       );
 
     const cropAdvice =
@@ -66,21 +130,101 @@ router.post(
       stresses
       );
 
-  
 
+    const healthScore =recommendations.score;
+
+      
+
+      const yieldData =
+
+      predictYield(
+
+      req.body.crop,
+
+      healthScore
+
+      );
+
+      const aiAnalysis =
+        await askAgronomist({
+
+        question:
+        `
+        Crop:
+        ${req.body.crop}
+
+        Health Score:
+        ${healthScore}/100
+
+        Expected Yield:
+        ${yieldData.predictedYield}
+        Quintal/Acre
+
+        Explain:
+
+        1. Current crop condition
+        2. Yield outlook
+        3. Main concerns
+        4. Recommended actions
+
+        Return plain text.
+
+        Do NOT use:
+
+        emojis,
+        markdown,
+        special symbols,
+        bullet icons.
+
+        Use only normal English text.
+
+        Keep answer simple.
+
+        Use farmer-friendly language.
+
+        `
+        });
+
+  
+    await FarmAnalytics.findOneAndUpdate(
+      {
+        farmId:
+        req.body.farmId
+      },
+      {
+        farmId:
+        req.body.farmId,
+        analytics: data.analytics,
+        imageDate:data.imageDate,
+        stresses,
+        recommendations,
+        cropAdvice,
+        yieldData,
+         aiAnalysis
+      },
+      {
+        upsert:true,
+        returnDocument:"after"
+      }
+    );
   
 
    return res.json({
 
-    analytics:data,
+    analytics:
+  data.analytics,
 
     stresses,
 
     recommendations,
 
-    cropAdvice
+    cropAdvice,
 
-    });
+    yieldData,
+
+     aiAnalysis
+
+  });
 
 
   }

@@ -2,10 +2,16 @@ const mongoose = require("mongoose");
 
 const FarmSchema = new mongoose.Schema({
 
-  userId: {
-    type: String,
-    required: true
-  },
+  userId:{
+
+    type:
+    mongoose.Schema.Types.ObjectId,
+
+    ref:"User",
+
+    required:true
+
+    },
 
   farmer: Object,
 

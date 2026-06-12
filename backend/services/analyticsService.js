@@ -33,6 +33,17 @@ async function getAnalytics(
           .first();  //get the most recent one image
 
 
+        const imageDate =
+          ee.Date(
+          image.get(
+            "system:time_start"
+          )
+          )
+          .format(
+          "YYYY-MM-dd"
+          );
+
+
         const ndvi =
             image.normalizedDifference(
             ["B8","B4"]
@@ -137,23 +148,39 @@ async function getAnalytics(
 
             });
 
-        stats.getInfo(
-            result => {
-
-            resolve(result);
-
-            }
+        ee.Dictionary({
+          analytics:
+          stats,
+          imageDate:
+          imageDate
+          })
+          .getInfo(
+          result => {
+            resolve(
+            result
             );
+          }
+
+          );
 
 
 
       }
       catch(err){
 
-        reject(err);
+        console.log(
+          "ANALYTICS ROUTE ERROR:",
+          err
+        );
 
-      }
+        res.status(500)
+        .json({
+          message:err.message
+        });
 
+        }
+
+        
     });
 
 }

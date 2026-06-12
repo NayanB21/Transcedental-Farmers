@@ -6,12 +6,18 @@ import polygonToGeoJson from "../utils/polygonToGeoJson";
 
 import HealthChart from "../components/HealthChart";
 
-export default function YieldAnalytics({ farm, onBack }) {
+export default function YieldAnalytics({ farm, report,onBack }) {
   const [timeline, setTimeline] = useState([]);
 
-  const [yieldData, setYieldData] = useState(null);
+  const [yieldData, setYieldData] =
+  useState(
+  report?.yieldData || null
+  );
 
-  const [aiAnalysis, setAiAnalysis] = useState("");
+  const [aiAnalysis, setAiAnalysis] =
+  useState(
+  report?.aiAnalysis || ""
+  );
 
   const downloadReport =
     async()=>{
@@ -107,6 +113,7 @@ export default function YieldAnalytics({ farm, onBack }) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+           farmId:farm._id,
           geoJson,
         }),
       },
@@ -116,7 +123,7 @@ export default function YieldAnalytics({ farm, onBack }) {
         const enriched = data.map((point) => ({
           ...point,
           ndvi: Number(point.ndvi.toFixed(2)),
-          healthScore: Math.round(point.ndvi * 100),
+          
           date: new Date(point.date).toLocaleDateString("en-IN", {
             day: "2-digit",
             month: "short",
@@ -125,37 +132,19 @@ export default function YieldAnalytics({ farm, onBack }) {
 
         setTimeline(enriched);
 
-        const latestHealth = enriched[enriched.length - 1]?.healthScore || 0;
-        fetch("http://localhost:5000/api/yield/predict", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            crop: farm.farmer.crop,
-            healthScore: latestHealth,
-          }),
-        })
-          .then((res) => res.json())
-          .then((result) => {
-            setYieldData(result);
+        setYieldData(
+        report?.yieldData
+        );
 
-            fetch("http://localhost:5000/api/yield-analysis", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                crop: farm.farmer.crop,
-                healthScore: latestHealth,
-                predictedYield: result.predictedYield,
-              }),
-            })
-              .then((res) => res.json())
-              .then((data) => {
-                setAiAnalysis(data.answer);
-              });
-          });
+        setAiAnalysis(
+        report?.aiAnalysis
+        );
+
+            
+
+          
+
+
       }).catch(console.error);
 
     
@@ -178,9 +167,10 @@ export default function YieldAnalytics({ farm, onBack }) {
       <div className="card">
         <h3>Latest Health Score</h3>
         <h2>
-          {timeline.length > 0
-            ? timeline[timeline.length - 1].healthScore
-            : "--"}
+          {report
+            ?.recommendations
+            ?.score
+          }
           /100
         </h2>
       </div>

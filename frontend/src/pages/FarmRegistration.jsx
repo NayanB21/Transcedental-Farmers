@@ -68,7 +68,7 @@ export default function FarmRegistration({
 
       const payload = {
 
-        userId: user._id,
+        
 
         farmer,
         landRecord,

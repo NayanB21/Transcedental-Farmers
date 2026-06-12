@@ -31,6 +31,11 @@ export default function App() {  //default=main thing/file/fn
   const [selectedFarm,setSelectedFarm] =
     useState(null);
 
+  const [
+ selectedReport,
+ setSelectedReport
+]=useState(null);
+
   const [user, setUser] =    //useState,useEffect for login and signup
     useState(                //useState,useEffect for FarmRegi is define inside it only
                                   //and not needed here thus not included
@@ -65,15 +70,21 @@ export default function App() {  //default=main thing/file/fn
             )
           }
             onYieldAnalytics={
-              (farm)=>{
+              (
+                farm,
+                report
+              ) => {
                 setSelectedFarm(
-                  farm
+                farm
+                );
+                setSelectedReport(
+                report
                 );
                 setPage(
-                  "yieldanalytics"
+                "yieldanalytics"
                 );
               }
-            }
+              }
         />
       );
     }
@@ -82,6 +93,7 @@ export default function App() {  //default=main thing/file/fn
       return(
         <YieldAnalytics
           farm={selectedFarm}
+          report={selectedReport}
           onBack={() =>
             setPage(
               "farmdetails"

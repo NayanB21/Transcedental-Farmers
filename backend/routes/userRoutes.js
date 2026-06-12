@@ -4,6 +4,9 @@ const User = require("../models/User");
 
 const router = express.Router();
 
+const jwt =
+require("jsonwebtoken");
+
 router.post("/signup", async(req,res)=>{
 
   try{
@@ -89,11 +92,24 @@ router.post("/login", async (req, res) => {
 
     }
 
-    res.json({
-      _id: user._id,
-      name: user.name,
-      phone: user.phone
-    });
+    const token =
+      jwt.sign(
+      {
+        id:user._id
+      },
+      process.env.JWT_SECRET,
+      {
+        expiresIn:"7d"
+      }
+      );
+      res.json({
+      token,
+      user:{
+        _id:user._id,
+        name:user.name,
+        phone:user.phone
+      }
+      });
 
   }
   catch (err) {
